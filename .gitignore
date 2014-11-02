@@ -1,0 +1,5 @@
+/bin/
+/serverDB/
+/chatterServerKeyStore.jks
+/derby.log
+/meyKey.cer
