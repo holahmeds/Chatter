@@ -22,8 +22,9 @@ public class ClientHandler implements Runnable {
 	public void run() {
 		String s;
 		try {
-			while (!(s = clientInput.readLine()).equals("exit"))
+			while (!(s = clientInput.readLine()).equals("exit")) {
 				clientOutput.println(s);
+			}				
 		} catch (IOException e) {
 		} finally {
 			this.close();

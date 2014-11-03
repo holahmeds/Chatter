@@ -1,4 +1,5 @@
 /bin/
+/lib/
 /serverDB/
 /chatterServerKeyStore.jks
 /derby.log
