@@ -22,11 +22,14 @@ public class ClientHandler implements Runnable {
 	public void run() {
 		String s;
 		try {
+			while (!loginClient());
+			
 			while (!(s = clientInput.readLine()).equals("exit")) {
 				clientOutput.println(s);
-			}				
+			}
 		} catch (IOException e) {
 		} finally {
+			clientOutput.println("exit");
 			this.close();
 		}
 	}
@@ -37,5 +40,20 @@ public class ClientHandler implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private boolean loginClient() throws IOException {
+		clientOutput.println("send login details");
+		
+		String username = clientInput.readLine();
+		char[] password = new char[Integer.parseInt(clientInput.readLine())];
+		clientInput.read(password);
+		
+		boolean result = Server.validatePass(username, password);
+		for (int i = 0; i < password.length; i++) {
+			password[i] = 0;
+		}
+		
+		return result;
 	}
 }

@@ -107,7 +107,7 @@ public class Server {
 			ResultSet result = statement.executeQuery(
 					"SELECT Pass_Hash FROM Users WHERE Username='" + user + '\'');
 
-			if (result.next() && PasswordHash.validatePassword(password, result.getString("Password"))) {
+			if (result.next() && PasswordHash.validatePassword(password, result.getString("Pass_Hash"))) {
 				return true;
 			}
 		} catch (SQLException e) {
