@@ -52,6 +52,7 @@ public class ServerHandler implements Runnable {
 			}
 		});
 		
+		serverOutput.println("sending login details");
 		serverOutput.println((String) GUIData.take());
 		serverOutput.println((int) GUIData.take());
 		serverOutput.write((char[]) GUIData.take());

@@ -11,7 +11,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.crackstation.PasswordHash;
 
@@ -20,6 +23,8 @@ public class Server {
 	private static SimpleDateFormat formatter;
 	private static ClientListener listener;
 	private static Connection dbCon;
+	
+	private static ConcurrentHashMap<String, ClientHandler> connectedClients;
 
 	public static void main(String[] args) {
 		formatter = new SimpleDateFormat("[MM/dd/yyyy h:mm:ss a]");
@@ -38,6 +43,8 @@ public class Server {
 
 		listener = new ClientListener();
 		new Thread(listener).start();
+		
+		connectedClients = new ConcurrentHashMap<String, ClientHandler>();
 
 		try {
 			while (true) {
@@ -82,6 +89,8 @@ public class Server {
 			if (changes == 1) {
 				return true;
 			}
+			
+			statement.close();
 		} catch (SQLException e) {
 			log(e.toString());
 		} catch (NoSuchAlgorithmException e) {
@@ -110,6 +119,8 @@ public class Server {
 			if (result.next() && PasswordHash.validatePassword(password, result.getString("Pass_Hash"))) {
 				return true;
 			}
+			
+			statement.close();
 		} catch (SQLException e) {
 			log(e.toString());
 		} catch (NoSuchAlgorithmException e) {
@@ -130,6 +141,8 @@ public class Server {
 			if (changes == 1) {
 				return true;
 			}
+			
+			statement.close();
 		} catch (SQLException e) {
 			log(e.toString());
 		} catch (NoSuchAlgorithmException e) {
@@ -139,5 +152,65 @@ public class Server {
 		}
 		
 		return false;
+	}
+	
+	public static List<String> getContactsOfUser(String user) {
+		ArrayList<String> contacts = new ArrayList<String>();
+		try {
+			Statement statement = dbCon.createStatement();
+			ResultSet result = statement.executeQuery("SELECT Contact FROM Contact WHERE Username='" + user
+					+ '\'');
+			
+			while (result.next()) {
+				contacts.add(result.getString("Contact"));
+			}
+			
+			statement.close();
+		} catch (SQLException e) {
+			log(e.toString());
+		}
+		
+		return contacts;
+	}
+	
+	public static List<String> getUserContactOf(String user) {
+		ArrayList<String> revContacts = new ArrayList<String>();
+		try {
+			Statement statement = dbCon.createStatement();
+			ResultSet result = statement.executeQuery("SELECT Username FROM Contact WHERE Contact='" + user
+					+ '\'');
+			
+			while (result.next()) {
+				revContacts.add(result.getString("Username"));
+			}
+			
+			statement.close();
+		} catch (SQLException e) {
+			log(e.toString());
+		}
+		
+		return revContacts;
+	}
+	
+	public static boolean userCheckContactOnline(String user, String contact) {
+		try {
+			Statement statement = dbCon.createStatement();
+			ResultSet result = statement.executeQuery("SELECT Username FROM Contact WHERE Contact='" + user
+					+ "' AND Username='" + contact + '\'');
+			
+			if (result.next()) {
+				return connectedClients.contains(contact);
+			}
+			
+			statement.close();
+		} catch (SQLException e) {
+			log(e.toString());
+		}
+		
+		return false;
+	}
+	
+	public static void registerClient(ClientHandler ch) {
+		connectedClients.put(ch.getUsername(), ch);
 	}
 }

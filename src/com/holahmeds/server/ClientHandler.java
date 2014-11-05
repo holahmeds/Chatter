@@ -10,6 +10,7 @@ public class ClientHandler implements Runnable {
 	private Socket clientSocket;
 	private BufferedReader clientInput;
 	private PrintWriter clientOutput;
+	private String clientUsername;
 	
 	public ClientHandler(Socket s) throws IOException {
 		clientSocket = s;
@@ -22,10 +23,10 @@ public class ClientHandler implements Runnable {
 	public void run() {
 		String s;
 		try {
-			while (!loginClient());
+			loginClient();
 			
 			while (!(s = clientInput.readLine()).equals("exit")) {
-				clientOutput.println(s);
+				
 			}
 		} catch (IOException e) {
 		} finally {
@@ -43,17 +44,28 @@ public class ClientHandler implements Runnable {
 	}
 	
 	private boolean loginClient() throws IOException {
-		clientOutput.println("send login details");
+		boolean result = false;
 		
-		String username = clientInput.readLine();
-		char[] password = new char[Integer.parseInt(clientInput.readLine())];
-		clientInput.read(password);
-		
-		boolean result = Server.validatePass(username, password);
-		for (int i = 0; i < password.length; i++) {
-			password[i] = 0;
+		while (!result) {
+			clientOutput.println("send login details");
+			
+			// ignore all requests until client sends login details
+			while(!clientInput.readLine().equals("sending login details"));
+
+			clientUsername = clientInput.readLine();
+			char[] password = new char[Integer.parseInt(clientInput.readLine())];
+			clientInput.read(password);
+
+			result = Server.validatePass(clientUsername, password);
+			for (int i = 0; i < password.length; i++) {
+				password[i] = 0;
+			}
 		}
 		
 		return result;
+	}
+	
+	public String getUsername() {
+		return clientUsername;
 	}
 }
