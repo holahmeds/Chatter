@@ -1,9 +1,10 @@
 package com.holahmeds.client;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.UnknownHostException;
-import java.util.Scanner;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -15,13 +16,15 @@ public class Client {
 		SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 		SSLSocket socket = (SSLSocket) socketFactory.createSocket("localhost", 11234);
 		
-		Scanner gimi = new Scanner(System.in);
-		PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
+//		new Thread(new ServerHandler(socket)).start();
+		BufferedReader gimi = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		OutputStream serverOutput = socket.getOutputStream();
 		
-		new Thread(new ServerHandler(socket)).start();
-		
-		while(gimi.hasNext()) {
-			output.println(gimi.nextLine());
+		serverOutput.write("echo\necho this\n".getBytes());
+		serverOutput.flush();
+		String s;
+		while ((s=gimi.readLine()) != null) {
+			System.out.println(s);
 		}
 		
 		socket.close();

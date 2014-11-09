@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.crackstation.PasswordHash;
@@ -25,6 +26,9 @@ public class Server {
 	private static Connection dbCon;
 	
 	private static ConcurrentHashMap<String, ClientHandler> connectedClients;
+	static ConcurrentHashMap<String, String> sessionToUser;
+	
+	static Random random;
 
 	public static void main(String[] args) {
 		formatter = new SimpleDateFormat("[MM/dd/yyyy h:mm:ss a]");
@@ -45,6 +49,7 @@ public class Server {
 		new Thread(listener).start();
 		
 		connectedClients = new ConcurrentHashMap<String, ClientHandler>();
+		sessionToUser = new ConcurrentHashMap<String, String>();
 
 		try {
 			while (true) {
@@ -210,7 +215,7 @@ public class Server {
 		return false;
 	}
 	
-	public static void registerClient(ClientHandler ch) {
-		connectedClients.put(ch.getUsername(), ch);
-	}
+//	public static void registerClient(ClientHandler ch) {
+//		connectedClients.put(ch.getUsername(), ch);
+//	}
 }
