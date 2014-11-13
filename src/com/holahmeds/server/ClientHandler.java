@@ -5,14 +5,25 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class ClientHandler implements Runnable {
 	private Socket clientSocket;
 	private BufferedReader clientInput;
 	private OutputStream clientOutput;
+	private SessionManager sessionManager;
 
-	public ClientHandler(Socket s) throws IOException {
+	private static HashMap<String, LinkedBlockingQueue<String>> clientMessages;
+
+	static {
+		clientMessages = new HashMap<String, LinkedBlockingQueue<String>>();
+	}
+
+	public ClientHandler(Socket s, SessionManager sm) throws IOException {
 		clientSocket = s;
+		sessionManager = sm;
+
 		clientInput = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 		clientOutput = s.getOutputStream();
 	}
@@ -20,14 +31,37 @@ public class ClientHandler implements Runnable {
 	@Override
 	public void run() {
 		try {
+			String sessionKey = clientInput.readLine();
+			String user = sessionManager.getUser(sessionKey);
+
 			String request = clientInput.readLine();
-			switch (request) {
-			case "echo":
-				clientOutput.write(clientInput.readLine().getBytes());
-				break;
-			case "get session key":
+			if (request.equals("get session key")) {
 				registerClient();
-				break;
+			} else if (user == null) {
+				/* 
+				 * client is trying to make requests with invalid session key
+				 * or without logging in
+				 */
+				write("invalid session key");
+				return;
+			} else {
+				// valid user making valid request
+				
+				if (!clientMessages.containsKey(user)) {
+					clientMessages.put(sessionManager.getUser(sessionKey),
+							new LinkedBlockingQueue<String>());
+				}
+				
+				switch (request) {
+				case "update":
+					sendMessages(user);
+					break;
+				case "get contacts":
+					Server.getContactsOfUser(user);
+					break;
+				}
+				
+				write("done");
 			}
 		} catch (IOException e) {
 		} finally {
@@ -49,23 +83,25 @@ public class ClientHandler implements Runnable {
 		clientInput.read(password);
 
 		if (Server.validatePass(username, password)) {
-			clientOutput.write(createSessionKey(username).getBytes());
+			write(sessionManager.createSessionKey(username));
 		} else {
-			clientOutput.write("invalid login".getBytes());
+			write("invalid login");
 		}
 		for (int i = 0; i < password.length; i++) {
 			password[i] = 0;
 		}
 	}
 
-	private String createSessionKey(String user) {
-		String key = null;
-		while (key == null || Server.sessionToUser.containsKey(key)) {
-			key = String.valueOf(Server.random.nextInt());
+	private void sendMessages(String user) throws IOException {
+		LinkedBlockingQueue<String> messages = clientMessages.get(user);
+		
+		while (!messages.isEmpty()) {
+			write(messages.poll());
 		}
-
-		Server.sessionToUser.put(key, user);
-
-		return key;
+	}
+	
+	public void write(String s) throws IOException {
+		clientOutput.write(s.getBytes());
+		clientOutput.write('\n');
 	}
 }

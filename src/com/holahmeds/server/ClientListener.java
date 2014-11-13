@@ -2,22 +2,36 @@ package com.holahmeds.server;
 
 import java.io.IOException;
 import java.net.SocketException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 
 public class ClientListener implements Runnable {
-	SSLServerSocket socket;
+	private SSLServerSocket socket;
+	private SessionManager sessionManager;
+	private ExecutorService pool;
+	
+	public ClientListener(SessionManager sm) {
+		sessionManager = sm;
+		pool = Executors.newFixedThreadPool(10);
+	}
 	
 	@Override
 	public void run() {
-		SSLServerSocketFactory socketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+		SSLServerSocketFactory socketFactory = 
+				(SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+		
 		try {
-			socket = (SSLServerSocket) socketFactory.createServerSocket(Server.SERVER_LISTEN_PORT);
+			socket = (SSLServerSocket) socketFactory
+					.createServerSocket(Server.SERVER_LISTEN_PORT);
+			
 			Server.log("Listening on port "+socket.getLocalPort());
 			while(true) {
 				try {
-					new Thread(new ClientHandler(socket.accept())).start();
+					pool.execute(
+							new ClientHandler(socket.accept(), sessionManager));
 				} catch (SocketException e) {
 					Server.log("Listen socket closed");
 					break;
@@ -37,6 +51,7 @@ public class ClientListener implements Runnable {
 	}
 
 	void close() {
+		pool.shutdown();
 		try {
 			socket.close();
 		} catch (IOException e) {

@@ -14,21 +14,16 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 
 import net.crackstation.PasswordHash;
 
 public class Server {
 	static final int SERVER_LISTEN_PORT = 11234;
+	
 	private static SimpleDateFormat formatter;
 	private static ClientListener listener;
 	private static Connection dbCon;
-	
-	private static ConcurrentHashMap<String, ClientHandler> connectedClients;
-	static ConcurrentHashMap<String, String> sessionToUser;
-	
-	static Random random;
+	private static SessionManager sessionManager;
 
 	public static void main(String[] args) {
 		formatter = new SimpleDateFormat("[MM/dd/yyyy h:mm:ss a]");
@@ -45,11 +40,9 @@ public class Server {
 			return;
 		}
 
-		listener = new ClientListener();
+		sessionManager = new SessionManager();
+		listener = new ClientListener(sessionManager);
 		new Thread(listener).start();
-		
-		connectedClients = new ConcurrentHashMap<String, ClientHandler>();
-		sessionToUser = new ConcurrentHashMap<String, String>();
 
 		try {
 			while (true) {
@@ -178,24 +171,25 @@ public class Server {
 		return contacts;
 	}
 	
-	public static List<String> getUserContactOf(String user) {
-		ArrayList<String> revContacts = new ArrayList<String>();
-		try {
-			Statement statement = dbCon.createStatement();
-			ResultSet result = statement.executeQuery("SELECT Username FROM Contact WHERE Contact='" + user
-					+ '\'');
-			
-			while (result.next()) {
-				revContacts.add(result.getString("Username"));
-			}
-			
-			statement.close();
-		} catch (SQLException e) {
-			log(e.toString());
-		}
-		
-		return revContacts;
-	}
+	// unused
+//	public static List<String> getUserContactOf(String user) {
+//		ArrayList<String> revContacts = new ArrayList<String>();
+//		try {
+//			Statement statement = dbCon.createStatement();
+//			ResultSet result = statement.executeQuery("SELECT Username FROM Contact WHERE Contact='" + user
+//					+ '\'');
+//			
+//			while (result.next()) {
+//				revContacts.add(result.getString("Username"));
+//			}
+//			
+//			statement.close();
+//		} catch (SQLException e) {
+//			log(e.toString());
+//		}
+//		
+//		return revContacts;
+//	}
 	
 	public static boolean userCheckContactOnline(String user, String contact) {
 		try {
@@ -204,7 +198,7 @@ public class Server {
 					+ "' AND Username='" + contact + '\'');
 			
 			if (result.next()) {
-				return connectedClients.contains(contact);
+				return sessionManager.isUserOnline(contact);
 			}
 			
 			statement.close();
