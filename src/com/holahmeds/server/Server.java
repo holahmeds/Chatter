@@ -13,7 +13,6 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import net.crackstation.PasswordHash;
 
@@ -133,8 +132,9 @@ public class Server {
 	public static boolean addUser(String user, char[] password) {
 		try {
 			Statement statement = dbCon.createStatement();
-			int changes = statement.executeUpdate("INSERT INTO Users VALUES ('" + user
-					+ "', '" + PasswordHash.createHash(password) + "')");
+			int changes = statement.executeUpdate(
+					"INSERT INTO Users VALUES ('" + user + "', '"
+					+ PasswordHash.createHash(password) + "')");
 			
 			if (changes == 1) {
 				return true;
@@ -152,11 +152,12 @@ public class Server {
 		return false;
 	}
 	
-	public static List<String> getContactsOfUser(String user) {
+	public static ArrayList<String> getContactsOfUser(String user) {
 		ArrayList<String> contacts = new ArrayList<String>();
 		try {
 			Statement statement = dbCon.createStatement();
-			ResultSet result = statement.executeQuery("SELECT Contact FROM Contact WHERE Username='" + user
+			ResultSet result = statement.executeQuery(
+					"SELECT Contact FROM Contact WHERE Username='" + user
 					+ '\'');
 			
 			while (result.next()) {
@@ -194,7 +195,8 @@ public class Server {
 	public static boolean userCheckContactOnline(String user, String contact) {
 		try {
 			Statement statement = dbCon.createStatement();
-			ResultSet result = statement.executeQuery("SELECT Username FROM Contact WHERE Contact='" + user
+			ResultSet result = statement.executeQuery(
+					"SELECT Username FROM Contact WHERE Contact='" + user
 					+ "' AND Username='" + contact + '\'');
 			
 			if (result.next()) {

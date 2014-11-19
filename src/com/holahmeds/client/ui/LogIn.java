@@ -17,6 +17,7 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
+import java.awt.Color;
 
 public class LogIn extends JFrame {
 
@@ -30,7 +31,6 @@ public class LogIn extends JFrame {
 	private JPasswordField txtPassword;
 	private JLabel lblChatter;
 	private Component verticalStrut_1;
-	private Component verticalStrut_2;
 	private JLabel lblUsername;
 	private JLabel lblPassword;
 
@@ -66,13 +66,14 @@ public class LogIn extends JFrame {
 		gbc_lblChatter.gridy = 1;
 		contentPane.add(lblChatter, gbc_lblChatter);
 		
-		verticalStrut_2 = Box.createVerticalStrut(20);
-		GridBagConstraints gbc_verticalStrut_2 = new GridBagConstraints();
-		gbc_verticalStrut_2.fill = GridBagConstraints.VERTICAL;
-		gbc_verticalStrut_2.insets = new Insets(0, 0, 5, 0);
-		gbc_verticalStrut_2.gridx = 2;
-		gbc_verticalStrut_2.gridy = 2;
-		contentPane.add(verticalStrut_2, gbc_verticalStrut_2);
+		lblInvalidUsernameOr = new JLabel("Invalid Username or Password");
+		lblInvalidUsernameOr.setForeground(Color.RED);
+		GridBagConstraints gbc_lblInvalidUsernameOr = new GridBagConstraints();
+		gbc_lblInvalidUsernameOr.gridwidth = 2;
+		gbc_lblInvalidUsernameOr.insets = new Insets(0, 0, 5, 5);
+		gbc_lblInvalidUsernameOr.gridx = 1;
+		gbc_lblInvalidUsernameOr.gridy = 2;
+		contentPane.add(lblInvalidUsernameOr, gbc_lblInvalidUsernameOr);
 		
 		lblUsername = new JLabel("Username");
 		GridBagConstraints gbc_lblUsername = new GridBagConstraints();
@@ -133,4 +134,12 @@ public class LogIn extends JFrame {
 			LogIn.this.dispose();
 		}
 	};
+	private JLabel lblInvalidUsernameOr;
+	
+	public void show(boolean retrying, boolean reloggingin) {
+		lblInvalidUsernameOr.setVisible(retrying);
+		txtUsername.setEditable(!reloggingin);
+		
+		this.setVisible(true);
+	}
 }

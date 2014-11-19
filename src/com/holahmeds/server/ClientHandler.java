@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -57,7 +58,7 @@ public class ClientHandler implements Runnable {
 					sendMessages(user);
 					break;
 				case "get contacts":
-					Server.getContactsOfUser(user);
+					sendContacts(user);
 					break;
 				}
 				
@@ -100,8 +101,17 @@ public class ClientHandler implements Runnable {
 		}
 	}
 	
-	public void write(String s) throws IOException {
+	private void write(String s) throws IOException {
 		clientOutput.write(s.getBytes());
 		clientOutput.write('\n');
+	}
+	
+	private void sendContacts(String user) throws IOException {
+		ArrayList<String> contacts = Server.getContactsOfUser(user);
+		for (String s : contacts) {
+			write((Server.userCheckContactOnline(user, s))
+					? s + ":o"
+					: s);
+		}
 	}
 }
