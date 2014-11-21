@@ -3,14 +3,15 @@ package com.holahmeds.client.ui;
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.util.ArrayList;
-import java.util.HashMap;
 
+import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.JTree;
-import javax.swing.border.EmptyBorder;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
+import javax.swing.JScrollPane;
+import javax.swing.ListSelectionModel;
+import javax.swing.SpringLayout;
 
 public class Contacts extends JFrame {
 
@@ -18,11 +19,8 @@ public class Contacts extends JFrame {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private JPanel contentPane;
-	private DefaultTreeModel root;
-	private DefaultMutableTreeNode onlineContacts;
-	private DefaultMutableTreeNode offlineContacts;
-	private HashMap<String, DefaultMutableTreeNode> contacts;
+	private DefaultListModel<String> listModelOnline;
+	private DefaultListModel<String> listModelOffline;
 
 	/**
 	 * Launch the application.
@@ -47,54 +45,60 @@ public class Contacts extends JFrame {
 	public Contacts() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 250, 400);
-		contentPane = new JPanel();
-		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		contentPane.setLayout(new BorderLayout(0, 0));
-		setContentPane(contentPane);
 		
-		JTree tree = new JTree();
-		tree.setRootVisible(false);
-		tree.setEditable(true);
-		tree.setModel(root = new DefaultTreeModel(
-			new DefaultMutableTreeNode("JTree") {
-				private static final long serialVersionUID = -4562470831848585839L;
+		JScrollPane scrollPane = new JScrollPane();
+		getContentPane().add(scrollPane, BorderLayout.CENTER);
+		
+		JPanel panel = new JPanel();
+		scrollPane.setViewportView(panel);
+		SpringLayout sl_panel = new SpringLayout();
+		panel.setLayout(sl_panel);
+		
+		JLabel lblOnline = new JLabel("Online");
+		sl_panel.putConstraint(SpringLayout.NORTH, lblOnline, 10, SpringLayout.NORTH, panel);
+		sl_panel.putConstraint(SpringLayout.WEST, lblOnline, 10, SpringLayout.WEST, panel);
+		panel.add(lblOnline);
 
-				{
-					onlineContacts = new DefaultMutableTreeNode("Online");
-					add(onlineContacts);
-					offlineContacts = new DefaultMutableTreeNode("Offline");
-					add(offlineContacts);
-				}
-			}
-		));
-		contentPane.add(tree, BorderLayout.CENTER);
+		listModelOnline = new DefaultListModel<String>();
+		JList<String> listOnline = new JList<String>(listModelOnline);
+		sl_panel.putConstraint(SpringLayout.SOUTH, listOnline, 100, SpringLayout.SOUTH, lblOnline);
+		listOnline.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		sl_panel.putConstraint(SpringLayout.NORTH, listOnline, 10, SpringLayout.SOUTH, lblOnline);
+		sl_panel.putConstraint(SpringLayout.WEST, listOnline, 10, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.EAST, listOnline, -10, SpringLayout.EAST, panel);
+		panel.add(listOnline);
 		
-		contacts = new HashMap<String, DefaultMutableTreeNode>();
+		JLabel lblOffliine = new JLabel("Offliine");
+		sl_panel.putConstraint(SpringLayout.NORTH, lblOffliine, 10, SpringLayout.SOUTH, listOnline);
+		sl_panel.putConstraint(SpringLayout.WEST, lblOffliine, 10, SpringLayout.WEST, panel);
+		panel.add(lblOffliine);
+		
+		listModelOffline = new DefaultListModel<String>();
+		JList<String> listOffline = new JList<String>(listModelOffline);
+		listOffline.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		sl_panel.putConstraint(SpringLayout.NORTH, listOffline, 10, SpringLayout.SOUTH, lblOffliine);
+		sl_panel.putConstraint(SpringLayout.WEST, listOffline, 10, SpringLayout.WEST, panel);
+		sl_panel.putConstraint(SpringLayout.SOUTH, listOffline, -10, SpringLayout.SOUTH, panel);
+		sl_panel.putConstraint(SpringLayout.EAST, listOffline, -10, SpringLayout.EAST, panel);
+		panel.add(listOffline);
+		
 	}
 
 	public void updateContacts(ArrayList<String> contactDetails) {
 		for (String s : contactDetails) {
 			String[] sd = s.split(":");
 			
-			DefaultMutableTreeNode stn = null;
-			if (!contacts.containsKey(sd[0])) {
-				stn = new DefaultMutableTreeNode(sd[0]);
-				contacts.put(sd[0], stn);
-			} else {
-				stn = contacts.get(sd[0]);
-			}
-			
 			if (sd.length == 2) {
 				// contact is online
-				if (!onlineContacts.isNodeChild(stn)) {
-					root.removeNodeFromParent(stn);
-					root.insertNodeInto(stn, onlineContacts, onlineContacts.getChildCount());
+				if (!listModelOnline.contains(sd[0])) {
+					listModelOffline.removeElement(sd[0]);
+					listModelOnline.addElement(sd[0]);
 				}
 			} else {
 				// contact offline
-				if (!offlineContacts.isNodeChild(stn)) {
-					root.removeNodeFromParent(stn);
-					root.insertNodeInto(stn, offlineContacts, offlineContacts.getChildCount());
+				if (!listModelOffline.contains(sd[0])) {
+					listModelOnline.removeElement(sd[0]);
+					listModelOffline.addElement(sd[0]);
 				}
 			}
 		}
