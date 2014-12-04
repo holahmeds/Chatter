@@ -27,13 +27,13 @@ public class ClientListener implements Runnable {
 			socket = (SSLServerSocket) socketFactory
 					.createServerSocket(Server.SERVER_LISTEN_PORT);
 			
-			Server.log("Listening on port "+socket.getLocalPort());
+			System.out.println("Listening on port "+socket.getLocalPort());
 			while(true) {
 				try {
 					pool.execute(
 							new ClientHandler(socket.accept(), sessionManager));
 				} catch (SocketException e) {
-					Server.log("Listen socket closed");
+					System.out.println("Listen socket closed");
 					break;
 				}
 			}

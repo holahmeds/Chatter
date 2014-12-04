@@ -5,10 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <p>The session manager creates and stores session keys for users. Session 
- * keys can be set to expire after a certain amount of time with no activity.</p>
- * 
- * <p>Session Managers come with a default "" session.</p>
- *
+ * keys are be set to expire after a certain amount of time with no activity.</p>
  */
 public class SessionManager {
 	private ConcurrentHashMap<String, String> sessionToUser;
@@ -16,12 +13,10 @@ public class SessionManager {
 	
 	private Random random;
 
-	private static String nullString = "";
 	public final long sessionTimeout;
 
 	public SessionManager(int timeout) {
 		sessionToUser = new ConcurrentHashMap<String, String>();
-		sessionToUser.put(nullString, nullString);
 		userLastContact = new ConcurrentHashMap<String, Long>();
 		random = new Random();
 		sessionTimeout = timeout;
@@ -37,10 +32,10 @@ public class SessionManager {
 	 * @return
 	 */
 	public String createSessionKey(String username) {
-		String key = nullString;
-		while (sessionToUser.containsKey(key)) {
+		String key;
+		do {
 			key = String.valueOf(random.nextInt());
-		}
+		} while (sessionToUser.containsKey(key));
 
 		sessionToUser.put(key, username);
 		userLastContact.put(username, System.currentTimeMillis());

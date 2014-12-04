@@ -10,22 +10,18 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
 import net.crackstation.PasswordHash;
 
 public class Server {
 	static final int SERVER_LISTEN_PORT = 11234;
 	
-	private static SimpleDateFormat formatter;
 	private static ClientListener listener;
 	private static Connection dbCon;
 	private static SessionManager sessionManager;
 
 	public static void main(String[] args) {
-		formatter = new SimpleDateFormat("[MM/dd/yyyy h:mm:ss a]");
 		BufferedReader gimi = new BufferedReader(new InputStreamReader(System.in));
 
 		System.setProperty("javax.net.ssl.keyStore", "chatterServerKeyStore.jks");
@@ -58,22 +54,18 @@ public class Server {
 				}
 			}
 		} catch (IOException e) {
-			log(e.toString());
+			e.printStackTrace();
 		} catch (NullPointerException e) {
-			log(e.toString());
+			e.printStackTrace();
 		} finally {
 			System.out.println("Stopping server...");
 			listener.close();
 			try {
 				DriverManager.getConnection("jdbc:derby:serverDB;shutdown=true");
 			} catch (SQLException e) {
-				log(e.getMessage());
+				System.out.println(e.getMessage());
 			}
 		}
-	}
-
-	public static void log(String s) {
-		System.out.println(formatter.format(new Date()) + s);
 	}
 
 	private static boolean setUserPass(String user, char[] password) {
@@ -88,12 +80,8 @@ public class Server {
 			}
 			
 			statement.close();
-		} catch (SQLException e) {
-			log(e.toString());
-		} catch (NoSuchAlgorithmException e) {
-			log(e.toString());
-		} catch (InvalidKeySpecException e) {
-			log(e.toString());
+		} catch (SQLException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+			e.printStackTrace();
 		}
 
 		return false;
@@ -118,12 +106,8 @@ public class Server {
 			}
 			
 			statement.close();
-		} catch (SQLException e) {
-			log(e.toString());
-		} catch (NoSuchAlgorithmException e) {
-			log(e.toString());
-		} catch (InvalidKeySpecException e) {
-			log(e.toString());
+		} catch (SQLException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+			e.printStackTrace();
 		}
 
 		return false;
@@ -141,12 +125,8 @@ public class Server {
 			}
 			
 			statement.close();
-		} catch (SQLException e) {
-			log(e.toString());
-		} catch (NoSuchAlgorithmException e) {
-			log(e.toString());
-		} catch (InvalidKeySpecException e) {
-			log(e.toString());
+		} catch (SQLException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+			e.printStackTrace();
 		}
 		
 		return false;
@@ -166,31 +146,11 @@ public class Server {
 			
 			statement.close();
 		} catch (SQLException e) {
-			log(e.toString());
+			e.printStackTrace();
 		}
 		
 		return contacts;
 	}
-	
-	// unused
-//	public static List<String> getUserContactOf(String user) {
-//		ArrayList<String> revContacts = new ArrayList<String>();
-//		try {
-//			Statement statement = dbCon.createStatement();
-//			ResultSet result = statement.executeQuery("SELECT Username FROM Contact WHERE Contact='" + user
-//					+ '\'');
-//			
-//			while (result.next()) {
-//				revContacts.add(result.getString("Username"));
-//			}
-//			
-//			statement.close();
-//		} catch (SQLException e) {
-//			log(e.toString());
-//		}
-//		
-//		return revContacts;
-//	}
 	
 	public static boolean userCheckContactOnline(String user, String contact) {
 		try {
@@ -205,13 +165,40 @@ public class Server {
 			
 			statement.close();
 		} catch (SQLException e) {
-			log(e.toString());
+			e.printStackTrace();
 		}
 		
 		return false;
 	}
+
+	public static void addContact(String user, String contact) {
+		try {
+			Statement statement = dbCon.createStatement();
+			ResultSet checkExist = statement.executeQuery(
+					"SELECT Username FROM Users WHERE Username='" + contact + '\'');
+			
+			if (checkExist.next() && !getContactsOfUser(user).contains(contact)) {
+				statement = dbCon.createStatement();
+				statement.executeUpdate(
+						"INSERT INTO Contact VALUES ('" + user + "','" + contact + "')");
+			}
+			
+			statement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 	
-//	public static void registerClient(ClientHandler ch) {
-//		connectedClients.put(ch.getUsername(), ch);
-//	}
+	public static void removeContact(String user, String contact) {
+		try {
+			Statement statement = dbCon.createStatement();
+			statement.executeUpdate(
+					"DELETE FROM Contact WHERE Username='" + user
+					+ "' AND Contact='" + contact + '\'');
+			
+			statement.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 }

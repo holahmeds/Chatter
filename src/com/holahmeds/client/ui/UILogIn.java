@@ -18,8 +18,10 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import java.awt.Color;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
-public class LogIn extends JFrame {
+public class UILogIn extends JFrame {
 
 	/**
 	 * 
@@ -37,7 +39,7 @@ public class LogIn extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public LogIn() {
+	public UILogIn() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 250);
 		contentPane = new JPanel();
@@ -70,7 +72,7 @@ public class LogIn extends JFrame {
 		lblInvalidUsernameOr.setForeground(Color.RED);
 		GridBagConstraints gbc_lblInvalidUsernameOr = new GridBagConstraints();
 		gbc_lblInvalidUsernameOr.gridwidth = 2;
-		gbc_lblInvalidUsernameOr.insets = new Insets(0, 0, 5, 5);
+		gbc_lblInvalidUsernameOr.insets = new Insets(0, 0, 5, 0);
 		gbc_lblInvalidUsernameOr.gridx = 1;
 		gbc_lblInvalidUsernameOr.gridy = 2;
 		contentPane.add(lblInvalidUsernameOr, gbc_lblInvalidUsernameOr);
@@ -92,6 +94,7 @@ public class LogIn extends JFrame {
 		gbc_txtUsername.gridy = 3;
 		contentPane.add(txtUsername, gbc_txtUsername);
 		txtUsername.setColumns(10);
+		txtUsername.addKeyListener(enterKeyAdapter);
 		
 		lblPassword = new JLabel("Password");
 		GridBagConstraints gbc_lblPassword = new GridBagConstraints();
@@ -109,9 +112,15 @@ public class LogIn extends JFrame {
 		gbc_txtPassword.gridy = 4;
 		contentPane.add(txtPassword, gbc_txtPassword);
 		txtPassword.setColumns(10);
+		txtPassword.addKeyListener(enterKeyAdapter);
 		
 		JButton btnSignIn = new JButton("Sign In");
-		btnSignIn.addActionListener(sendLoginDetails);
+		btnSignIn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				sendLoginDetails();
+			}
+		});
 		GridBagConstraints gbc_btnSignIn = new GridBagConstraints();
 		gbc_btnSignIn.gridwidth = 2;
 		gbc_btnSignIn.fill = GridBagConstraints.HORIZONTAL;
@@ -120,26 +129,33 @@ public class LogIn extends JFrame {
 		contentPane.add(btnSignIn, gbc_btnSignIn);
 	}
 	
-	public LogIn(BlockingQueue<Object> queue) {
+	public UILogIn(BlockingQueue<Object> queue) {
 		this();
 		dataOutputQueue = queue;
 	}
 	
-	private ActionListener sendLoginDetails = new ActionListener() {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			dataOutputQueue.add(txtUsername.getText());
-			dataOutputQueue.add(txtPassword.getPassword().length);
-			dataOutputQueue.add(txtPassword.getPassword());
-			LogIn.this.dispose();
-		}
-	};
+	private void sendLoginDetails() {
+		dataOutputQueue.add(txtUsername.getText());
+		dataOutputQueue.add(txtPassword.getPassword().length);
+		dataOutputQueue.add(txtPassword.getPassword());
+		UILogIn.this.dispose();
+	}
 	private JLabel lblInvalidUsernameOr;
 	
 	public void show(boolean retrying, boolean reloggingin) {
 		lblInvalidUsernameOr.setVisible(retrying);
 		txtUsername.setEditable(!reloggingin);
+		txtPassword.setText("");
 		
 		this.setVisible(true);
 	}
+	
+	KeyAdapter enterKeyAdapter = new KeyAdapter() {
+		@Override
+		public void keyReleased(KeyEvent e) {
+			if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+				sendLoginDetails();
+			}
+		}
+	};
 }
