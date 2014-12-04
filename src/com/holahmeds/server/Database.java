@@ -4,9 +4,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 
 import net.crackstation.PasswordHash;
@@ -14,10 +14,33 @@ import net.crackstation.PasswordHash;
 public class Database {
 	private static Connection dbCon;
 	
+	private static PreparedStatement passHashChange;
+	private static PreparedStatement passHashGet;
+	private static PreparedStatement usersInsert;
+	private static PreparedStatement usersFind;
+	private static PreparedStatement contactInsert;
+	private static PreparedStatement contactFind;
+	private static PreparedStatement contactDelete;
+	
 	static {
 		try {
 			dbCon = DriverManager.getConnection("jdbc:derby:serverDB");
 			dbCon.createStatement().execute("set schema user_data");
+			
+			passHashChange = dbCon.prepareStatement(
+					"UPDATE Users SET Pass_Hash=? WHERE Username=?");
+			passHashGet = dbCon.prepareStatement(
+					"SELECT Pass_Hash FROM Users WHERE Username=?");
+			usersInsert = dbCon.prepareStatement(
+					"INSERT INTO Users VALUES (?, ?)");
+			usersFind = dbCon.prepareStatement(
+					"SELECT Username FROM Users WHERE Username LIKE ?");
+			contactInsert = dbCon.prepareStatement(
+					"INSERT INTO Contact VALUES (?, ?)");
+			contactFind = dbCon.prepareStatement(
+					"SELECT Username FROM Contact WHERE Username LIKE ? AND Contact LIKE ?");
+			contactDelete = dbCon.prepareStatement(
+					"DELETE FROM Contact WHERE Username=? AND Contact=?");
 		} catch (SQLException e) {
 			e.printStackTrace();
 			// Can't run the server without database so terminate
@@ -27,17 +50,16 @@ public class Database {
 	
 	static boolean setUserPass(String user, char[] password) {
 		try {
-			Statement statement = dbCon.createStatement();
-			int changes = statement.executeUpdate("UPDATE Users SET Pass_Hash='"
-					+ PasswordHash.createHash(password)
-					+ "' WHERE Username='" + user + '\'');
-
+			passHashChange.setString(1, PasswordHash.createHash(password));
+			passHashChange.setString(2, user);
+			
+			int changes = passHashChange.executeUpdate();
 			if (changes == 1) {
 				return true;
 			}
-			
-			statement.close();
-		} catch (SQLException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+		} catch (SQLException
+				| NoSuchAlgorithmException
+				| InvalidKeySpecException e) {
 			e.printStackTrace();
 		}
 
@@ -54,15 +76,13 @@ public class Database {
 
 	public static boolean validatePass(String user, char[] password) {
 		try {
-			Statement statement = dbCon.createStatement();
-			ResultSet result = statement.executeQuery(
-					"SELECT Pass_Hash FROM Users WHERE Username='" + user + '\'');
+			passHashGet.setString(1, user);
+			ResultSet result = passHashGet.executeQuery();
 
-			if (result.next() && PasswordHash.validatePassword(password, result.getString("Pass_Hash"))) {
-				return true;
-			}
-			
-			statement.close();
+			return result.next()
+					&& PasswordHash.validatePassword(
+							password, 
+							result.getString("Pass_Hash"));
 		} catch (SQLException | NoSuchAlgorithmException | InvalidKeySpecException e) {
 			e.printStackTrace();
 		}
@@ -72,16 +92,10 @@ public class Database {
 	
 	static boolean addUser(String user, char[] password) {
 		try {
-			Statement statement = dbCon.createStatement();
-			int changes = statement.executeUpdate(
-					"INSERT INTO Users VALUES ('" + user + "', '"
-					+ PasswordHash.createHash(password) + "')");
+			usersInsert.setString(1, user);
+			usersInsert.setString(2, PasswordHash.createHash(password));
 			
-			if (changes == 1) {
-				return true;
-			}
-			
-			statement.close();
+			return usersInsert.executeUpdate() == 1;
 		} catch (SQLException | NoSuchAlgorithmException | InvalidKeySpecException e) {
 			e.printStackTrace();
 		}
@@ -92,16 +106,13 @@ public class Database {
 	public static ArrayList<String> getContactsOfUser(String user) {
 		ArrayList<String> contacts = new ArrayList<String>();
 		try {
-			Statement statement = dbCon.createStatement();
-			ResultSet result = statement.executeQuery(
-					"SELECT Contact FROM Contact WHERE Username='" + user
-					+ '\'');
+			contactFind.setString(1, user);
+			contactFind.setString(2, "*");
 			
+			ResultSet result = contactFind.executeQuery();
 			while (result.next()) {
 				contacts.add(result.getString("Contact"));
 			}
-			
-			statement.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -111,16 +122,11 @@ public class Database {
 	
 	public static boolean userHasContact(String user, String contact) {
 		try {
-			Statement statement = dbCon.createStatement();
-			ResultSet result = statement.executeQuery(
-					"SELECT Username FROM Contact WHERE Contact='" + user
-					+ "' AND Username='" + contact + '\'');
+			contactFind.setString(1, user);
+			contactFind.setString(2, contact);
 			
-			if (result.next()) {
-				return true;
-			}
-			
-			statement.close();
+			ResultSet result = contactFind.executeQuery();
+			return result.next();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -130,17 +136,14 @@ public class Database {
 
 	public static void addContact(String user, String contact) {
 		try {
-			Statement statement = dbCon.createStatement();
-			ResultSet checkExist = statement.executeQuery(
-					"SELECT Username FROM Users WHERE Username='" + contact + '\'');
+			usersFind.setString(1, contact);
+			ResultSet checkExist = usersFind.executeQuery();
 			
 			if (checkExist.next() && !getContactsOfUser(user).contains(contact)) {
-				statement = dbCon.createStatement();
-				statement.executeUpdate(
-						"INSERT INTO Contact VALUES ('" + user + "','" + contact + "')");
+				contactInsert.setString(1, user);
+				contactInsert.setString(2, contact);
+				contactInsert.executeUpdate();
 			}
-			
-			statement.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -148,12 +151,9 @@ public class Database {
 	
 	public static void removeContact(String user, String contact) {
 		try {
-			Statement statement = dbCon.createStatement();
-			statement.executeUpdate(
-					"DELETE FROM Contact WHERE Username='" + user
-					+ "' AND Contact='" + contact + '\'');
-			
-			statement.close();
+			contactDelete.setString(1, user);
+			contactDelete.setString(2, contact);
+			contactDelete.executeUpdate();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
