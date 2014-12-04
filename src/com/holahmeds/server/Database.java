@@ -38,7 +38,7 @@ public class Database {
 			contactInsert = dbCon.prepareStatement(
 					"INSERT INTO Contact VALUES (?, ?)");
 			contactFind = dbCon.prepareStatement(
-					"SELECT Username FROM Contact WHERE Username LIKE ? AND Contact LIKE ?");
+					"SELECT * FROM Contact WHERE Username LIKE ? AND Contact LIKE ?");
 			contactDelete = dbCon.prepareStatement(
 					"DELETE FROM Contact WHERE Username=? AND Contact=?");
 		} catch (SQLException e) {
@@ -107,7 +107,7 @@ public class Database {
 		ArrayList<String> contacts = new ArrayList<String>();
 		try {
 			contactFind.setString(1, user);
-			contactFind.setString(2, "*");
+			contactFind.setString(2, "%");
 			
 			ResultSet result = contactFind.executeQuery();
 			while (result.next()) {
