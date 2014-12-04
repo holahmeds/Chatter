@@ -82,10 +82,10 @@ public class ClientHandler implements Runnable {
 					sendRoomMembers(clientInput.readLine());
 					break;
 				case "add contact":
-					Server.addContact(user, clientInput.readLine());
+					Database.addContact(user, clientInput.readLine());
 					break;
 				case "remove contact":
-					Server.removeContact(user, clientInput.readLine());
+					Database.removeContact(user, clientInput.readLine());
 					break;
 				}
 				
@@ -111,7 +111,7 @@ public class ClientHandler implements Runnable {
 		char[] password = new char[Integer.parseInt(clientInput.readLine())];
 		clientInput.read(password);
 
-		if (Server.validatePass(username, password)) {
+		if (Database.validatePass(username, password)) {
 			write(sessionManager.createSessionKey(username));
 		} else {
 			write("invalid login");
@@ -135,7 +135,7 @@ public class ClientHandler implements Runnable {
 	}
 	
 	private void sendContacts() throws IOException {
-		ArrayList<String> contacts = Server.getContactsOfUser(user);
+		ArrayList<String> contacts = Database.getContactsOfUser(user);
 		for (String s : contacts) {
 			write((Server.userCheckContactOnline(user, s))
 					? s + ":o"
