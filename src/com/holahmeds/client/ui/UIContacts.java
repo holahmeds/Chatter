@@ -179,17 +179,32 @@ public class UIContacts extends JFrame {
 	}
 
 	public void updateContacts(ArrayList<String> contactDetails) {
-		listModelOffline.removeAllElements();
-		listModelOnline.removeAllElements();
 		for (String s : contactDetails) {
 			String[] sd = s.split(":");
-
+			
 			if (sd.length == 2) {
 				// contact is online
-				listModelOnline.addElement(sd[0]);
+				if (!listModelOnline.contains(sd[0])) {
+					listModelOffline.removeElement(sd[0]);
+					listModelOnline.addElement(sd[0]);
+				}
 			} else {
 				// contact offline
-				listModelOffline.addElement(sd[0]);
+				if (!listModelOffline.contains(sd[0])) {
+					listModelOnline.removeElement(sd[0]);
+					listModelOffline.addElement(sd[0]);
+				}
+			}
+		}
+		
+		for (Object s : listModelOffline.toArray()) {
+			if (!contactDetails.contains(s)) {
+				listModelOffline.removeElement(s);
+			}
+		}
+		for (Object s : listModelOnline.toArray()) {
+			if (!contactDetails.contains(s + ":o")) {
+				listModelOnline.removeElement(s);
 			}
 		}
 	}
