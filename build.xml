@@ -1,0 +1,30 @@
+<project default="build">
+	<property name="src.dir" location="src"/>
+	<property name="bin.dir" value="bin"/>
+	<fileset id="libs" dir="lib" includes="*.jar"></fileset>
+	
+	<target name="clean">
+		<delete dir="${bin.dir}" />
+	</target>
+	
+	<target name="compile" depends="clean">
+		<mkdir dir="${bin.dir}"/>
+		<javac srcdir="${src.dir}" destdir="${bin.dir}" includeantruntime="false"/>
+	</target>
+	
+	<target name="build" depends="compile">
+		<jar destfile="Server.jar" basedir="${bin.dir}" includes="com/holahmeds/server/** net/crackstation/*.class">
+			<zipgroupfileset refid="libs"/>
+			<manifest>
+				<attribute name="Main-Class" value="com.holahmeds.server.Server"/>
+			</manifest>
+		</jar>
+		
+		<jar destfile="Client.jar" basedir="${bin.dir}" includes="com/holahmeds/client/**">
+			<manifest>
+				<attribute name="Main-Class" value="com.holahmeds.client.Client"/>
+			</manifest>
+		</jar>
+	</target>
+	
+</project>
