@@ -58,12 +58,18 @@ public class Room implements Runnable {
 										+ roomID + '\n'
 										+ "message:" + event[1] + '\n');
 							} catch (Exception e) {
-								updates.add("message:failed to send message - "
-										+ event[1] + ":");
+							}
+							break;
+						case "add":
+							try {
+								Client.request("add user to room\n"
+										+ roomID + '\n'
+										+ event[1]);
+							} catch (Exception e) {
 							}
 							break;
 						default:
-							System.out.println("Unhandled Event" + event[0]);
+							System.out.println("Unhandled Event " + event[0]);
 						}
 					}
 				});

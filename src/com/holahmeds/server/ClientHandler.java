@@ -137,7 +137,7 @@ public class ClientHandler implements Runnable {
 	private void sendContacts() throws IOException {
 		ArrayList<String> contacts = Database.getContactsOfUser(user);
 		for (String s : contacts) {
-			write((Server.userCheckContactOnline(user, s))
+			write((userCheckContactOnline(user, s))
 					? s + ":o"
 					: s);
 		}
@@ -156,11 +156,12 @@ public class ClientHandler implements Runnable {
 	}
 	
 	private void addUserToRoom(String room, String toAdd) {
-		if (toAdd.equals(user) || Server.userCheckContactOnline(user, toAdd)) {
+		if ((toAdd.equals(user) || userCheckContactOnline(user, toAdd))
+				&& !roomMembers.get(room).contains(toAdd)) {
+			
 			roomMembers.get(room).add(toAdd);
+			clientMessages.get(toAdd).add("open room\n" + room);
 		}
-		
-		clientMessages.get(toAdd).add("open room\n" + room);
 	}
 	
 	private void removeUserFromRoom(String room) {
@@ -184,5 +185,10 @@ public class ClientHandler implements Runnable {
 				write(s);
 			}
 		}
+	}
+
+	private boolean userCheckContactOnline(String user, String contact) {
+		return Database.userHasContact(contact, user)
+				&& sessionManager.isUserOnline(contact);
 	}
 }

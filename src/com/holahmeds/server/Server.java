@@ -3,15 +3,11 @@ package com.holahmeds.server;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 
 public class Server {
 	static final int SERVER_LISTEN_PORT = 11234;
 	
 	private static ClientListener listener;
-	
-	private static SessionManager sessionManager;
 
 	public static void main(String[] args) {
 		BufferedReader gimi = new BufferedReader(new InputStreamReader(System.in));
@@ -19,8 +15,8 @@ public class Server {
 		System.setProperty("javax.net.ssl.keyStore", "chatterServerKeyStore.jks");
 		System.setProperty("javax.net.ssl.keyStorePassword", "somethingortheother");
 
-		sessionManager = new SessionManager();
-		listener = new ClientListener(sessionManager);
+		Database.init();
+		listener = new ClientListener(new SessionManager());
 		new Thread(listener).start();
 
 		try {
@@ -44,17 +40,8 @@ public class Server {
 		} finally {
 			System.out.println("Stopping server...");
 			listener.close();
-			try {
-				DriverManager.getConnection("jdbc:derby:serverDB;shutdown=true");
-			} catch (SQLException e) {
-				System.out.println(e.getMessage());
-			}
+			Database.close();
 		}
-	}
-	
-	public static boolean userCheckContactOnline(String user, String contact) {
-		return Database.userHasContact(user, contact)
-				&& sessionManager.isUserOnline(contact);
 	}
 	
 }

@@ -25,6 +25,10 @@ public class Client {
 	private static SSLSocketFactory socketFactory;
 	private static String sessionKey = "";
 
+	private static ArrayList<String> onlineContacts;
+	private static ArrayList<String> offlineContacts;
+	private static Object contactLock;
+	
 	private static LinkedBlockingQueue<Object> GUIInput;
 	private static UILogIn loginWindow;
 	private static UIContacts contactsWindow;
@@ -35,6 +39,10 @@ public class Client {
 		System.setProperty("javax.net.ssl.trustStore", "chatterClientKeyStore.jks");
 
 		socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+		
+		onlineContacts = new ArrayList<String>();
+		offlineContacts = new ArrayList<String>();
+		contactLock = new Object();
 
 		GUIInput = new LinkedBlockingQueue<Object>();
 		loginWindow = new UILogIn(GUIInput);
@@ -51,10 +59,26 @@ public class Client {
 
 		while (true) {
 			ArrayList<String> contacts = request("get contacts");
+			onlineContacts.clear();
+			offlineContacts.clear();
+			synchronized (contactLock) {
+				for (String s : contacts) {
+					String[] sd = s.split(":");
+
+					if (sd.length == 2) {
+						// contact is online
+						onlineContacts.add(sd[0]);
+					} else {
+						// contact offline
+						offlineContacts.add(sd[0]);
+					}
+				}
+			}
+			
 			EventQueue.invokeLater(new Runnable() {
 				@Override
 				public void run() {
-					contactsWindow.updateContacts(contacts);
+					contactsWindow.updateContacts();
 				}
 			});
 			
@@ -137,4 +161,14 @@ public class Client {
 		return response;
 	}
 
+	public static String[] getOnlineContacts() {
+		synchronized (contactLock) {
+			return onlineContacts.toArray(new String[onlineContacts.size()]);
+		}
+	}
+	public static String[] getOfflineContacts() {
+		synchronized (contactLock) {
+			return offlineContacts.toArray(new String[offlineContacts.size()]);
+		}
+	}
 }

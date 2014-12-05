@@ -9,7 +9,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
@@ -170,7 +171,9 @@ public class UIContacts extends JFrame {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				if (e.getButton() == MouseEvent.BUTTON3) {
-					contactContext.show(e.getComponent(), e.getX(), e.getY());
+					JList<?> list = (JList<?>) e.getComponent();
+					list.setSelectedIndex(list.locationToIndex(e.getPoint()));
+					contactContext.show(list, e.getX(), e.getY());
 				}
 			}
 		};
@@ -178,34 +181,23 @@ public class UIContacts extends JFrame {
 		listOffline.addMouseListener(contactContextOpener);
 	}
 
-	public void updateContacts(ArrayList<String> contactDetails) {
-		for (String s : contactDetails) {
-			String[] sd = s.split(":");
-			
-			if (sd.length == 2) {
-				// contact is online
-				if (!listModelOnline.contains(sd[0])) {
-					listModelOffline.removeElement(sd[0]);
-					listModelOnline.addElement(sd[0]);
-				}
-			} else {
-				// contact offline
-				if (!listModelOffline.contains(sd[0])) {
-					listModelOnline.removeElement(sd[0]);
-					listModelOffline.addElement(sd[0]);
-				}
+	public void updateContacts() {
+		sync(Client.getOnlineContacts(), listModelOnline);
+		sync(Client.getOfflineContacts(), listModelOffline);
+	}
+	
+	private void sync(String[] arr, DefaultListModel<String> model) {
+		for (String s : arr) {
+			if (!model.contains(s)) {
+				model.addElement(s);
 			}
 		}
-		
-		for (Object s : listModelOffline.toArray()) {
-			if (!contactDetails.contains(s)) {
-				listModelOffline.removeElement(s);
-			}
-		}
-		for (Object s : listModelOnline.toArray()) {
-			if (!contactDetails.contains(s + ":o")) {
-				listModelOnline.removeElement(s);
+		List<String> arrAsList = Arrays.asList(arr);
+		for (Object s : model.toArray()) {
+			if (!arrAsList.contains(s)) {
+				model.removeElement(s);
 			}
 		}
 	}
+	
 }
