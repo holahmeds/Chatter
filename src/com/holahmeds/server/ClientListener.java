@@ -8,6 +8,12 @@ import java.util.concurrent.Executors;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 
+/**
+ * Creates a server socket to listen for requests and uses a thread pool
+ * to execute them.
+ * @author ahmed
+ *
+ */
 public class ClientListener implements Runnable {
 	private SSLServerSocket socket;
 	private SessionManager sessionManager;

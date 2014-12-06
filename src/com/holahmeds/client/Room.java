@@ -7,6 +7,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import com.holahmeds.client.ui.UIRoom;
 
+/**
+ * Creates a room window and shows messages sent to and from the room. 
+ * @author ahmed
+ *
+ */
 public class Room implements Runnable {
 	private String roomID;
 	private UIRoom ui;
@@ -29,6 +34,7 @@ public class Room implements Runnable {
 		
 		while (true) {
 			try {
+				// refresh members in the room.
 				ArrayList<String> members = Client.request("send room members\n"
 						+ roomID + '\n');
 				String[] event = (updates.isEmpty())

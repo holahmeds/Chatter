@@ -23,10 +23,15 @@ public class Database {
 	private static PreparedStatement contactFind;
 	private static PreparedStatement contactDelete;
 
+	/**
+	 * Connects to the database and prepares statements for use.
+	 * If database does not exist this will create it.
+	 */
 	public static void init() {
 		try {
 			dbCon = DriverManager.getConnection("jdbc:derby:serverDB;create=true");
 			if (!schemaExists()) {
+				// new database
 				Statement statement = dbCon.createStatement();
 				statement.addBatch("CREATE SCHEMA user_data");
 				statement.addBatch("SET SCHEMA user_data");
@@ -77,14 +82,31 @@ public class Database {
 		return false;
 	}
 
-	public static boolean setUserPass(String user, char[] password, char[] oldPassword) {
+	/**
+	 * Validates oldPassword and sets the password to newPassword
+	 * @param user
+	 * @param newPassword
+	 * @param oldPassword
+	 * @return
+	 */
+	public static boolean setUserPass(String user,
+			char[] newPassword, char[] oldPassword) {
+		
 		if (validatePass(user, oldPassword)) {
-			return setUserPass(user, password);
+			return setUserPass(user, newPassword);
 		} else {
 			return false;
 		}
 	}
 
+	/**
+	 * Validates user password.
+	 * Returns false if password does not match the one in database or if
+	 * user does not exist.
+	 * @param user
+	 * @param password
+	 * @return
+	 */
 	public static boolean validatePass(String user, char[] password) {
 		try {
 			passHashGet.setString(1, user);
@@ -94,13 +116,20 @@ public class Database {
 					&& PasswordHash.validatePassword(
 							password, 
 							result.getString("Pass_Hash"));
-		} catch (SQLException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+		} catch (SQLException | NoSuchAlgorithmException
+				| InvalidKeySpecException e) {
 			e.printStackTrace();
 		}
 
 		return false;
 	}
 
+	/**
+	 * Adds new user to database. Returns false if username already taken.
+	 * @param user
+	 * @param password
+	 * @return
+	 */
 	static boolean addUser(String user, char[] password) {
 		try {
 			usersInsert.setString(1, user);
@@ -114,6 +143,11 @@ public class Database {
 		return false;
 	}
 
+	/**
+	 * Returns a list of the users contacts.
+	 * @param user
+	 * @return
+	 */
 	public static ArrayList<String> getContactsOfUser(String user) {
 		ArrayList<String> contacts = new ArrayList<String>();
 		try {
@@ -131,10 +165,16 @@ public class Database {
 		return contacts;
 	}
 
-	public static boolean userHasContact(String user, String contact) {
+	/**
+	 * Returns true if user1 has user2 in their contacts list.
+	 * @param user1
+	 * @param user2
+	 * @return
+	 */
+	public static boolean userHasContact(String user1, String user2) {
 		try {
-			contactFind.setString(1, user);
-			contactFind.setString(2, contact);
+			contactFind.setString(1, user1);
+			contactFind.setString(2, user2);
 
 			ResultSet result = contactFind.executeQuery();
 			return result.next();
@@ -145,11 +185,17 @@ public class Database {
 		return false;
 	}
 
-	public static void addContact(String user, String contact) {
+	/** 
+	 * Adds user2 to the contacts list of user1.
+	 * Does nothing if either user1 or user2 does not exist.
+	 * @param user1
+	 * @param user2
+	 */
+	public static void addContact(String user1, String user2) {
 		try {
-			if (!user.equals(contact)) {
-				contactInsert.setString(1, user);
-				contactInsert.setString(2, contact);
+			if (!user1.equals(user2)) {
+				contactInsert.setString(1, user1);
+				contactInsert.setString(2, user2);
 				contactInsert.executeUpdate();
 			}
 		} catch (SQLException e) {
@@ -157,22 +203,36 @@ public class Database {
 		}
 	}
 
-	public static void removeContact(String user, String contact) {
+	/**
+	 * Removes user2 from contacts list of user 1.
+	 * Does nothing if either user1 or user2 does not exist.
+	 * @param user1
+	 * @param user2
+	 */
+	public static void removeContact(String user1, String user2) {
 		try {
-			contactDelete.setString(1, user);
-			contactDelete.setString(2, contact);
+			contactDelete.setString(1, user1);
+			contactDelete.setString(2, user2);
 			contactDelete.executeUpdate();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Checks if the schema USER_DATA exists in the database.
+	 * @return
+	 * @throws SQLException
+	 */
 	private static boolean schemaExists() throws SQLException {
 		ResultSet schemas = dbCon.getMetaData().getSchemas(null, "USER_DATA");
 
 		return schemas.next();
 	}
 
+	/**
+	 * Disconnects from the database.
+	 */
 	public static void close() {
 		try {
 			DriverManager.getConnection("jdbc:derby:serverDB;shutdown=true");

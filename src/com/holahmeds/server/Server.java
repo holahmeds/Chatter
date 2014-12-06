@@ -12,6 +12,7 @@ public class Server {
 	public static void main(String[] args) {
 		BufferedReader gimi = new BufferedReader(new InputStreamReader(System.in));
 
+		// set keystore to use when creating connections
 		System.setProperty("javax.net.ssl.keyStore", "chatterServerKeyStore.jks");
 		System.setProperty("javax.net.ssl.keyStorePassword", "somethingortheother");
 
@@ -30,7 +31,9 @@ public class Server {
 						System.out.println("Invalid Username");
 					}
 				} else if(command.length == 3 && command[0].equals("useradd")) {
-					Database.addUser(command[1], command[2].toCharArray());
+					if (!Database.addUser(command[1], command[2].toCharArray())) {
+						System.out.println("Username taken");
+					}
 				}
 			}
 		} catch (IOException e) {

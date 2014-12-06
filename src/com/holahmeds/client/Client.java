@@ -25,6 +25,10 @@ public class Client {
 	private static SSLSocketFactory socketFactory;
 	private static String sessionKey = "";
 
+	/*
+	 * Access to onlineContacts and offlineContacts is synchronised using
+	 * contactLock as the lock.
+	 */
 	private static ArrayList<String> onlineContacts;
 	private static ArrayList<String> offlineContacts;
 	private static Object contactLock;
@@ -35,8 +39,10 @@ public class Client {
 
 	private static HashMap<String, LinkedBlockingQueue<String>> rooms;
 
-	public static void main(String[] args) throws UnknownHostException, IOException, InterruptedException {
-		System.setProperty("javax.net.ssl.trustStore", "chatterClientKeyStore.jks");
+	public static void main(String[] args)
+			throws UnknownHostException, IOException, InterruptedException {
+		System.setProperty("javax.net.ssl.trustStore",
+				"chatterClientKeyStore.jks");
 
 		socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 
@@ -50,6 +56,7 @@ public class Client {
 
 		rooms = new HashMap<String, LinkedBlockingQueue<String>>();
 
+		// get a session key
 		boolean flag = true;
 		do {
 			flag = login(!flag, false);
@@ -57,7 +64,14 @@ public class Client {
 
 		contactsWindow.setVisible(true);
 
+		/* 
+		 * An update loop. This makes sure a request is sent at least regular
+		 * intervals so that the session key does not expire.
+		 * It is also responsible for refreshing the contact list and getting
+		 * user messages from the server.
+		 */
 		while (true) {
+			// refresh contacts
 			ArrayList<String> contacts = request("get contacts");
 			onlineContacts.clear();
 			offlineContacts.clear();
@@ -82,6 +96,7 @@ public class Client {
 				}
 			});
 
+			// get user updates
 			ArrayList<String> updates = request("update");
 			Iterator<String> it = updates.iterator();
 			while (it.hasNext()) {
@@ -99,9 +114,22 @@ public class Client {
 		}
 	}
 
-	public static boolean login(boolean retrying, boolean reloggingin) throws UnknownHostException, IOException, InterruptedException {
+	/**
+	 * Opens a login window and uses the credentials entered to get a
+	 * session key. This method handles sensitive data and therefore does not
+	 * use the request method.
+	 * @param retrying
+	 * @param reloggingin
+	 * @return
+	 * @throws UnknownHostException
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	private static boolean login(boolean retrying, boolean reloggingin)
+			throws UnknownHostException, IOException, InterruptedException {
 		Socket socket = socketFactory.createSocket(serverAddress, port);
-		PrintWriter serverOutput = new PrintWriter(socket.getOutputStream(), true);
+		PrintWriter serverOutput = new PrintWriter(
+				socket.getOutputStream(), true);
 
 		EventQueue.invokeLater(new Runnable() {
 			@Override
@@ -112,11 +140,13 @@ public class Client {
 		serverOutput.println(sessionKey);
 		serverOutput.println("get session key");
 
+		// send username, length of password and the password
 		serverOutput.println((String) GUIInput.take());
 		serverOutput.println((int) GUIInput.take());
 		serverOutput.println((char[]) GUIInput.take());
 
-		BufferedReader serverInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		BufferedReader serverInput = new BufferedReader(new InputStreamReader(
+				socket.getInputStream()));
 		String response = serverInput.readLine();
 		serverOutput.println("done");
 
@@ -128,9 +158,20 @@ public class Client {
 		}
 	}
 
-	public static boolean changePass(char[] oldPass, char[] newPass) throws UnknownHostException, IOException {
+	/**
+	 * Changes the password for the logged in user. This method handles
+	 * sensitive data and therefore does not use the request method.
+	 * @param oldPass
+	 * @param newPass
+	 * @return
+	 * @throws UnknownHostException
+	 * @throws IOException
+	 */
+	public static boolean changePass(char[] oldPass, char[] newPass)
+			throws UnknownHostException, IOException {
 		Socket socket = socketFactory.createSocket(serverAddress, port);
-		PrintWriter serverOutput = new PrintWriter(socket.getOutputStream(), true);
+		PrintWriter serverOutput = new PrintWriter(
+				socket.getOutputStream(), true);
 
 		serverOutput.println(sessionKey);
 		serverOutput.println("change password");
@@ -139,17 +180,28 @@ public class Client {
 		serverOutput.println(newPass.length);
 		serverOutput.println(newPass);
 
-		BufferedReader serverInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		BufferedReader serverInput = new BufferedReader(new InputStreamReader(
+				socket.getInputStream()));
 		String response = serverInput.readLine();
 		serverOutput.println("done");
 
 		return response.equals("success");
 	}
 
-	public static ArrayList<String> request(String s) throws IOException, InterruptedException {
+	/**
+	 * Makes a request to the server and returns the response separated by
+	 * new lines.
+	 * @param s
+	 * @return
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	public static ArrayList<String> request(String s)
+			throws IOException, InterruptedException {
 		Socket socket = socketFactory.createSocket(serverAddress, port);
 		OutputStream serverOutput = socket.getOutputStream();
-		BufferedReader serverInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		BufferedReader serverInput = new BufferedReader(new InputStreamReader(
+				socket.getInputStream()));
 		ArrayList<String> response = new ArrayList<String>();
 
 		serverOutput.write(sessionKey.getBytes());

@@ -19,6 +19,10 @@ public class ClientHandler implements Runnable {
 
 	private static Random random;
 	private static HashMap<String, LinkedBlockingQueue<String>> roomMembers;
+	
+	/**
+	 * Buffer used to store messages not yet sent to user.
+	 */
 	private static HashMap<String, LinkedBlockingQueue<String>> clientMessages;
 
 	static {
@@ -36,8 +40,11 @@ public class ClientHandler implements Runnable {
 	public void run() {
 		try {
 			clientOutput = clientSocket.getOutputStream();
-			clientInput = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+			clientInput = new BufferedReader(new InputStreamReader(
+					clientSocket.getInputStream()));
 
+			// get session key and find user from that
+			// user will be null if not logged in yet
 			String sessionKey = clientInput.readLine();
 			user = sessionManager.getUser(sessionKey);
 
@@ -54,11 +61,6 @@ public class ClientHandler implements Runnable {
 			} else {
 				// valid user making valid request
 
-				if (!clientMessages.containsKey(user)) {
-					clientMessages.put(sessionManager.getUser(sessionKey),
-							new LinkedBlockingQueue<String>());
-				}
-
 				switch (request) {
 				case "change password":
 					changePass();
@@ -73,7 +75,8 @@ public class ClientHandler implements Runnable {
 					createRoom(clientInput.readLine());
 					break;
 				case "add user to room":
-					addUserToRoom(clientInput.readLine(), clientInput.readLine());
+					addUserToRoom(clientInput.readLine(),
+							clientInput.readLine());
 					break;
 				case "remove user from room":
 					removeUserFromRoom(clientInput.readLine());
@@ -109,18 +112,41 @@ public class ClientHandler implements Runnable {
 		}
 	}
 
+	/**
+	 * Verify login data and create a session key for user.
+	 * This method handles reading its own input because it contains passwords.
+	 * @throws IOException
+	 */
 	private void registerClient() throws IOException {
 		String username = clientInput.readLine();
 		char[] password = new char[Integer.parseInt(clientInput.readLine())];
 		clientInput.read(password);
 
 		if (Database.validatePass(username, password)) {
-			write(sessionManager.createSessionKey(username));
+			String sessionKey = sessionManager.createSessionKey(username);
+			
+			write(sessionKey);
+			
+			// if first login then create buffer to store user messages
+			if (!clientMessages.containsKey(user)) {
+				clientMessages.put(sessionManager.getUser(sessionKey),
+						new LinkedBlockingQueue<String>());
+			}
 		} else {
 			write("invalid login");
 		}
+		
+		// clear password
+		for (int i = 0; i < password.length; i++) {
+			password[i] = 0;
+		}
 	}
 
+	/**
+	 * Changes password of the user.
+	 * This method handles reading its own input because it contains passwords.
+	 * @throws IOException
+	 */
 	private void changePass() throws IOException {
 		char[] oldPass = new char[Integer.parseInt(clientInput.readLine())];
 		clientInput.read(oldPass);
@@ -133,8 +159,20 @@ public class ClientHandler implements Runnable {
 		} else {
 			write("failure");
 		}
+		
+		// clear both passwords
+		for (int i = 0; i < oldPass.length; i++) {
+			oldPass[i] = 0;
+		}
+		for (int i = 0; i < newPass.length; i++) {
+			newPass[i] = 0;
+		}
 	}
 
+	/**
+	 * Send all messages stored in buffer for user.
+	 * @throws IOException
+	 */
 	private void sendMessages() throws IOException {
 		LinkedBlockingQueue<String> messages = clientMessages.get(user);
 
@@ -148,6 +186,11 @@ public class ClientHandler implements Runnable {
 		clientOutput.write('\n');
 	}
 
+	/**
+	 * Sends a list of the user's contacts. If the contact is online then ":o"
+	 * is appended to contact name.
+	 * @throws IOException
+	 */
 	private void sendContacts() throws IOException {
 		ArrayList<String> contacts = Database.getContactsOfUser(user);
 		for (String s : contacts) {
@@ -157,6 +200,11 @@ public class ClientHandler implements Runnable {
 		}
 	}
 
+	/**
+	 * Creates a room and automatically adds the user
+	 * and the contact toAdd to it.
+	 * @param toAdd
+	 */
 	private void createRoom(String toAdd) {
 		String key;
 		do {
@@ -169,6 +217,13 @@ public class ClientHandler implements Runnable {
 		addUserToRoom(key, toAdd);
 	}
 
+	/**
+	 * Adds the user toAdd to a room.
+	 * A user can only add someone to the room if they can see the
+	 * contact online.
+	 * @param room
+	 * @param toAdd
+	 */
 	private void addUserToRoom(String room, String toAdd) {
 		if ((toAdd.equals(user) || userCheckContactOnline(user, toAdd))
 				&& !roomMembers.get(room).contains(toAdd)) {
@@ -178,10 +233,19 @@ public class ClientHandler implements Runnable {
 		}
 	}
 
+	/**
+	 * Removes user from a room. Users can only remove themselves from a room.
+	 * @param room
+	 */
 	private void removeUserFromRoom(String room) {
 		roomMembers.get(room).remove(user);
 	}
 
+	/**
+	 * Send a message to a room.
+	 * @param room
+	 * @param message
+	 */
 	private void sendToRoom(String room, String message) {
 		LinkedBlockingQueue<String> list = roomMembers.get(room);
 		if (list.contains(user)) {
@@ -192,6 +256,12 @@ public class ClientHandler implements Runnable {
 		}
 	}
 
+	/**
+	 * Sends a list of all members in a room. User can only see members of
+	 * a room if they are in it.
+	 * @param room
+	 * @throws IOException
+	 */
 	private void sendRoomMembers(String room) throws IOException {
 		LinkedBlockingQueue<String> list = roomMembers.get(room);
 		if (list.contains(user)) {
@@ -201,8 +271,14 @@ public class ClientHandler implements Runnable {
 		}
 	}
 
-	private boolean userCheckContactOnline(String user, String contact) {
-		return Database.userHasContact(contact, user)
-				&& sessionManager.isUserOnline(contact);
+	/**
+	 * Returns true if user1 can check if user2 is online.
+	 * @param user1
+	 * @param user2
+	 * @return
+	 */
+	private boolean userCheckContactOnline(String user1, String user2) {
+		return Database.userHasContact(user2, user1)
+				&& sessionManager.isUserOnline(user2);
 	}
 }
