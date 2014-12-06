@@ -37,7 +37,7 @@ public class ClientHandler implements Runnable {
 		try {
 			clientOutput = clientSocket.getOutputStream();
 			clientInput = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-			
+
 			String sessionKey = clientInput.readLine();
 			user = sessionManager.getUser(sessionKey);
 
@@ -53,13 +53,16 @@ public class ClientHandler implements Runnable {
 				return;
 			} else {
 				// valid user making valid request
-				
+
 				if (!clientMessages.containsKey(user)) {
 					clientMessages.put(sessionManager.getUser(sessionKey),
 							new LinkedBlockingQueue<String>());
 				}
-				
+
 				switch (request) {
+				case "change password":
+					changePass();
+					break;
 				case "update":
 					sendMessages();
 					break;
@@ -88,7 +91,7 @@ public class ClientHandler implements Runnable {
 					Database.removeContact(user, clientInput.readLine());
 					break;
 				}
-				
+
 				write("done");
 				clientInput.readLine();
 			}
@@ -116,58 +119,69 @@ public class ClientHandler implements Runnable {
 		} else {
 			write("invalid login");
 		}
-		for (int i = 0; i < password.length; i++) {
-			password[i] = 0;
+	}
+
+	private void changePass() throws IOException {
+		char[] oldPass = new char[Integer.parseInt(clientInput.readLine())];
+		clientInput.read(oldPass);
+		clientInput.readLine();
+		char[] newPass = new char[Integer.parseInt(clientInput.readLine())];
+		clientInput.read(newPass);
+
+		if (Database.setUserPass(user, newPass, oldPass)) {
+			write("success");
+		} else {
+			write("failure");
 		}
 	}
 
 	private void sendMessages() throws IOException {
 		LinkedBlockingQueue<String> messages = clientMessages.get(user);
-		
+
 		while (!messages.isEmpty()) {
 			write(messages.poll());
 		}
 	}
-	
+
 	private void write(String s) throws IOException {
 		clientOutput.write(s.getBytes());
 		clientOutput.write('\n');
 	}
-	
+
 	private void sendContacts() throws IOException {
 		ArrayList<String> contacts = Database.getContactsOfUser(user);
 		for (String s : contacts) {
 			write((userCheckContactOnline(user, s))
 					? s + ":o"
-					: s);
+							: s);
 		}
 	}
-	
+
 	private void createRoom(String toAdd) {
 		String key;
 		do {
 			key = String.valueOf(random.nextInt());
 		} while (roomMembers.containsKey(key));
-		
+
 		roomMembers.put(key, new LinkedBlockingQueue<String>());
-		
+
 		addUserToRoom(key, user);
 		addUserToRoom(key, toAdd);
 	}
-	
+
 	private void addUserToRoom(String room, String toAdd) {
 		if ((toAdd.equals(user) || userCheckContactOnline(user, toAdd))
 				&& !roomMembers.get(room).contains(toAdd)) {
-			
+
 			roomMembers.get(room).add(toAdd);
 			clientMessages.get(toAdd).add("open room\n" + room);
 		}
 	}
-	
+
 	private void removeUserFromRoom(String room) {
 		roomMembers.get(room).remove(user);
 	}
-	
+
 	private void sendToRoom(String room, String message) {
 		LinkedBlockingQueue<String> list = roomMembers.get(room);
 		if (list.contains(user)) {
@@ -177,7 +191,7 @@ public class ClientHandler implements Runnable {
 			}
 		}
 	}
-	
+
 	private void sendRoomMembers(String room) throws IOException {
 		LinkedBlockingQueue<String> list = roomMembers.get(room);
 		if (list.contains(user)) {

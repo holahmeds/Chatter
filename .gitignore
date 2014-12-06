@@ -5,3 +5,5 @@
 /derby.log
 /meyKey.cer
 /chatterClientKeyStore.jks
+/Client.jar
+/Server.jar

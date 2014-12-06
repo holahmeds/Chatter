@@ -35,7 +35,7 @@ public class UIContacts extends JFrame {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = -7514643645885915295L;
 	private DefaultListModel<String> listModelOnline;
 	private DefaultListModel<String> listModelOffline;
 
@@ -132,6 +132,17 @@ public class UIContacts extends JFrame {
 
 		JMenuItem mntmAddContact = new JMenuItem("Add Contact");
 		mnContacts.add(mntmAddContact);
+
+		JMenu mnOptions = new JMenu("Options");
+		menuBar.add(mnOptions);
+
+		JMenuItem mntmChangePassword = new JMenuItem("Change Password");
+		mntmChangePassword.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new UIPassChange().setVisible(true);
+			}
+		});
+		mnOptions.add(mntmChangePassword);
 		mntmAddContact.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -185,7 +196,7 @@ public class UIContacts extends JFrame {
 		sync(Client.getOnlineContacts(), listModelOnline);
 		sync(Client.getOfflineContacts(), listModelOffline);
 	}
-	
+
 	private void sync(String[] arr, DefaultListModel<String> model) {
 		for (String s : arr) {
 			if (!model.contains(s)) {
@@ -199,5 +210,4 @@ public class UIContacts extends JFrame {
 			}
 		}
 	}
-	
 }

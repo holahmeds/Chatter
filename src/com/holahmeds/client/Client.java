@@ -28,18 +28,18 @@ public class Client {
 	private static ArrayList<String> onlineContacts;
 	private static ArrayList<String> offlineContacts;
 	private static Object contactLock;
-	
+
 	private static LinkedBlockingQueue<Object> GUIInput;
 	private static UILogIn loginWindow;
 	private static UIContacts contactsWindow;
-	
+
 	private static HashMap<String, LinkedBlockingQueue<String>> rooms;
 
 	public static void main(String[] args) throws UnknownHostException, IOException, InterruptedException {
 		System.setProperty("javax.net.ssl.trustStore", "chatterClientKeyStore.jks");
 
 		socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-		
+
 		onlineContacts = new ArrayList<String>();
 		offlineContacts = new ArrayList<String>();
 		contactLock = new Object();
@@ -47,7 +47,7 @@ public class Client {
 		GUIInput = new LinkedBlockingQueue<Object>();
 		loginWindow = new UILogIn(GUIInput);
 		contactsWindow = new UIContacts();
-		
+
 		rooms = new HashMap<String, LinkedBlockingQueue<String>>();
 
 		boolean flag = true;
@@ -74,14 +74,14 @@ public class Client {
 					}
 				}
 			}
-			
+
 			EventQueue.invokeLater(new Runnable() {
 				@Override
 				public void run() {
 					contactsWindow.updateContacts();
 				}
 			});
-			
+
 			ArrayList<String> updates = request("update");
 			Iterator<String> it = updates.iterator();
 			while (it.hasNext()) {
@@ -118,15 +118,32 @@ public class Client {
 
 		BufferedReader serverInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		String response = serverInput.readLine();
+		serverOutput.println("done");
 
 		if(response.equals("invalid login")) {
-			serverOutput.println("done");
 			return false;
 		} else {
 			sessionKey = response;
-			serverOutput.println("done");
 			return true;
 		}
+	}
+
+	public static boolean changePass(char[] oldPass, char[] newPass) throws UnknownHostException, IOException {
+		Socket socket = socketFactory.createSocket(serverAddress, port);
+		PrintWriter serverOutput = new PrintWriter(socket.getOutputStream(), true);
+
+		serverOutput.println(sessionKey);
+		serverOutput.println("change password");
+		serverOutput.println(oldPass.length);
+		serverOutput.println(oldPass);
+		serverOutput.println(newPass.length);
+		serverOutput.println(newPass);
+
+		BufferedReader serverInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		String response = serverInput.readLine();
+		serverOutput.println("done");
+
+		return response.equals("success");
 	}
 
 	public static ArrayList<String> request(String s) throws IOException, InterruptedException {
