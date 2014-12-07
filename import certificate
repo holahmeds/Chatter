@@ -1,0 +1,11 @@
+#!/bin/bash
+
+which keytool
+if [ $? == 0 ]; then
+	echo "java runtime found"
+else 
+	echo "java runtime not found"
+	exit
+fi
+
+keytool  -importcert -file chatterCert.cer -alias chatterServer -keystore clientKeystore

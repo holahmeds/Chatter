@@ -1,10 +1,15 @@
 <project default="build">
 	<property name="src.dir" location="src"/>
-	<property name="bin.dir" value="bin"/>
-	<fileset id="libs" dir="lib" includes="*.jar"></fileset>
+	<property name="bin.dir" location="bin"/>
+	<property name="build.dir" location="build"/>
+	
+	<fileset id="libs" dir="lib" includes="*.jar"/>
+	<fileset id="server.classes" dir="bin" includes="com/holahmeds/server/** net/crackstation/*.class"/>
+	<fileset id="client.classes" dir="bin" includes="com/holahmeds/client/**"/>
 	
 	<target name="clean">
 		<delete dir="${bin.dir}" />
+		<delete dir="${build.dir}"/>
 	</target>
 	
 	<target name="compile" depends="clean">
@@ -13,18 +18,33 @@
 	</target>
 	
 	<target name="build" depends="compile">
-		<jar destfile="Server.jar" basedir="${bin.dir}" includes="com/holahmeds/server/** net/crackstation/*.class">
+		<jar destfile="${build.dir}/Server/Server.jar">
+			<fileset refid="server.classes"/>
 			<zipgroupfileset refid="libs"/>
 			<manifest>
 				<attribute name="Main-Class" value="com.holahmeds.server.Server"/>
 			</manifest>
 		</jar>
+		<copy todir="${build.dir}/Server">
+			<fileset dir=".">
+				<include name="create certificate*"/>
+				<include name="start server.bat"/>
+				<include name="server.properties"/>
+			</fileset>
+		</copy>
 		
-		<jar destfile="Client.jar" basedir="${bin.dir}" includes="com/holahmeds/client/**">
+		<jar destfile="${build.dir}/Client/Client.jar">
+			<fileset refid="client.classes"/>
 			<manifest>
 				<attribute name="Main-Class" value="com.holahmeds.client.Client"/>
 			</manifest>
 		</jar>
+		<copy todir="${build.dir}/Client">
+			<fileset dir=".">
+				<include name="import certificate*"/>
+				<include name="client.properties"/>
+			</fileset>
+		</copy>
 	</target>
 	
 </project>

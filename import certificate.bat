@@ -13,4 +13,6 @@ pause
 exit
 )
 
+"%JAVAHOME%\bin\keytool" -importcert -file chatterCert.cer -alias chatterServer -keystore clientKeystore
+
 pause
