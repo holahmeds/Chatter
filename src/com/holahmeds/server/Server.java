@@ -1,23 +1,33 @@
 package com.holahmeds.server;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Properties;
 
 public class Server {
-	static final int SERVER_LISTEN_PORT = 11234;
+	static int SERVER_LISTEN_PORT;
 	
 	private static ClientListener listener;
 
 	public static void main(String[] args) {
 		BufferedReader gimi = new BufferedReader(new InputStreamReader(System.in));
 
-		// set keystore to use when creating connections
-		System.setProperty("javax.net.ssl.keyStore", "chatterServerKeyStore.jks");
-		System.setProperty("javax.net.ssl.keyStorePassword", "somethingortheother");
+		// set keystore pass
+		System.setProperty("javax.net.ssl.keyStore", "serverKeyStore");
+		System.out.println("Enter keystore password");
+		System.setProperty("javax.net.ssl.keyStorePassword", String.valueOf(System.console().readPassword()));
+		
+		Properties properties = new Properties();
+		try {
+			properties.load(new FileInputStream("server.properties"));
+		} catch (IOException e1) {
+		}
+		SERVER_LISTEN_PORT = Integer.parseInt(properties.getProperty("listen port"));
 
 		Database.init();
-		listener = new ClientListener(new SessionManager());
+		listener = new ClientListener(new SessionManager(Integer.parseInt(properties.getProperty("session timeout"))));
 		new Thread(listener).start();
 
 		try {

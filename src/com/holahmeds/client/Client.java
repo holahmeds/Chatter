@@ -2,6 +2,7 @@ package com.holahmeds.client;
 
 import java.awt.EventQueue;
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -11,6 +12,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.net.ssl.SSLSocketFactory;
@@ -19,8 +21,8 @@ import com.holahmeds.client.ui.UIContacts;
 import com.holahmeds.client.ui.UILogIn;
 
 public class Client {
-	private static String serverAddress = "localhost";
-	private static int port = 11234;
+	private static String serverAddress;
+	private static int port;
 
 	private static SSLSocketFactory socketFactory;
 	private static String sessionKey = "";
@@ -42,7 +44,12 @@ public class Client {
 	public static void main(String[] args)
 			throws UnknownHostException, IOException, InterruptedException {
 		System.setProperty("javax.net.ssl.trustStore",
-				"chatterClientKeyStore.jks");
+				"clientKeyStore");
+		
+		Properties properties = new Properties();
+		properties.load(new FileInputStream("client.properties"));
+		serverAddress = properties.getProperty("server address");
+		port = Integer.parseInt(properties.getProperty("server port"));
 
 		socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
 
